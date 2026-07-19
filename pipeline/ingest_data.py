@@ -1,4 +1,5 @@
 import pandas as pd
+import click
 from tqdm.auto import tqdm
 from sqlalchemy import create_engine
 
@@ -26,16 +27,17 @@ parse_dates = [
     "tpep_dropoff_datetime"
 ]
 
-def run():
-    year = 2021
-    month = 1
-    pg_user = 'root'
-    pg_pass = 'root'
-    pg_host = 'localhost'
-    pg_port = 5432
-    pg_db = 'ny_taxi'
-    chunksize = 100000
-    table_name = 'yellow_taxi_data'
+@click.command()
+@click.option('--year', default=2021, type=int, show_default=True, help='Year of the taxi data to ingest.')
+@click.option('--month', default=1, type=int, show_default=True, help='Month of the taxi data to ingest.')
+@click.option('--pg-user', default='root', show_default=True, help='Postgres username.')
+@click.option('--pg-pass', default='root', show_default=True, help='Postgres password.')
+@click.option('--pg-host', default='localhost', show_default=True, help='Postgres host.')
+@click.option('--pg-port', default=5432, type=int, show_default=True, help='Postgres port.')
+@click.option('--pg-db', default='ny_taxi', show_default=True, help='Postgres database name.')
+@click.option('--chunksize', default=100000, type=int, show_default=True, help='Number of rows to load per batch.')
+@click.option('--target-table', default='yellow_taxi_data', show_default=True, help='Name of the table to write into.')
+def run(year, month, pg_user, pg_pass, pg_host, pg_port, pg_db, chunksize, target_table):
     prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/'
     url = prefix + f'yellow_tripdata_{year}-{month:02d}.csv.gz'
 
@@ -46,20 +48,20 @@ def run():
         dtype=dtype,
         parse_dates=parse_dates,
         iterator=True,
-        chunksize = chunksize
+        chunksize=chunksize
     )
 
     first = True
     for df_chunk in tqdm(df_iter):
         if first:
             df_chunk.head(0).to_sql(
-                name=table_name,
+                name=target_table,
                 con=engine,
                 if_exists='replace'
             )
             first = False
         df_chunk.to_sql(
-            name=table_name,
+            name=target_table,
             con=engine,
             if_exists='append'
         )
