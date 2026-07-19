@@ -9,3 +9,16 @@ docker run -it --rm \
     -p 5432:5432 \
     postgres:18
 ```
+
+### Ingestion Container
+```
+docker run -it \
+  --network=pg-network \
+  taxi_ingest:v001 \
+    --pg-user=root \
+    --pg-pass=root \
+    --pg-host=pgdatabase \
+    --pg-port=5432 \
+    --pg-db=ny_taxi \
+    --target-table=yellow_taxi_trips
+```
